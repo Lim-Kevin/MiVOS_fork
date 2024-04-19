@@ -97,34 +97,10 @@ class App(QWidget):
         self.tl_slider.setTickPosition(QSlider.TicksBelow)
         self.tl_slider.setTickInterval(1)
 
-        # brush size slider
-        self.brush_label = QLabel()
-        self.brush_label.setAlignment(Qt.AlignCenter)
-        self.brush_label.setMinimumWidth(100)
-
-        self.brush_slider = QSlider(Qt.Horizontal)
-        self.brush_slider.valueChanged.connect(self.brush_slide)
-        self.brush_slider.setMinimum(1)
-        self.brush_slider.setMaximum(100)
-        self.brush_slider.setValue(3)
-        self.brush_slider.setTickPosition(QSlider.TicksBelow)
-        self.brush_slider.setTickInterval(2)
-        self.brush_slider.setMinimumWidth(300)
-
-        # combobox
-        self.combo = QComboBox(self)
-        self.combo.addItem("davis")
-        self.combo.addItem("fade")
-        self.combo.addItem("light")
-        self.combo.currentTextChanged.connect(self.set_viz_mode)
-
         # Radio buttons for type of interactions
         self.curr_interaction = 'Scribble'
-        self.interaction_group = QButtonGroup()
-        self.radio_s2m = QRadioButton('Scribble')
-        self.interaction_group.addButton(self.radio_s2m)
-        self.radio_s2m.toggled.connect(self.interaction_radio_clicked)
-        self.radio_s2m.toggle()
+        self.brush_size = 3
+        self.commit_button.setEnabled(True)
 
         # Main canvas -> QLabel
         self.main_canvas = QLabel()
@@ -163,9 +139,6 @@ class App(QWidget):
         interact_topbox = QHBoxLayout()
         interact_botbox = QHBoxLayout()
         interact_topbox.setAlignment(Qt.AlignCenter)
-        interact_topbox.addWidget(self.radio_s2m)
-        interact_topbox.addWidget(self.brush_label)
-        interact_botbox.addWidget(self.brush_slider)
         interact_subbox.addLayout(interact_topbox)
         interact_subbox.addLayout(interact_botbox)
         navi.addLayout(interact_subbox)
@@ -177,7 +150,6 @@ class App(QWidget):
         navi.addStretch(1)
         navi.addWidget(self.progress)
         navi.addWidget(QLabel('Overlay Mode'))
-        navi.addWidget(self.combo)
         navi.addStretch(1)
         navi.addWidget(self.commit_button)
         navi.addWidget(self.run_button)
@@ -294,48 +266,6 @@ class App(QWidget):
         self.console.moveCursor(QTextCursor.End)
         print(text)
 
-    def interaction_radio_clicked(self, event):
-        self.last_interaction = self.curr_interaction
-        if self.radio_s2m.isChecked():
-            self.curr_interaction = 'Scribble'
-            self.brush_size = 3
-            self.brush_slider.setDisabled(True)
-        elif self.radio_fbrs.isChecked():
-            self.curr_interaction = 'Click'
-            self.brush_size = 3
-            self.brush_slider.setDisabled(True)
-        elif self.radio_free.isChecked():
-            self.brush_slider.setDisabled(False)
-            self.brush_slide()
-            self.curr_interaction = 'Free'
-        if self.curr_interaction == 'Scribble':
-            self.commit_button.setEnabled(True)
-        else:
-            self.commit_button.setEnabled(False)
-
-        # if self.last_interaction != self.curr_interaction:
-        # self.console_push_text('Interaction changed to ' + self.curr_interaction + '.')
-
-    def compose_current_im(self):
-        if self.in_local_mode:
-            if self.viz_mode == 'fade':
-                self.viz = overlay_davis_fade(self.local_np_im, self.local_np_mask)
-            elif self.viz_mode == 'davis':
-                self.viz = overlay_davis(self.local_np_im, self.local_np_mask)
-            elif self.viz_mode == 'light':
-                self.viz = overlay_davis(self.local_np_im, self.local_np_mask, 0.9)
-            else:
-                raise NotImplementedError
-        else:
-            if self.viz_mode == 'fade':
-                self.viz = overlay_davis_fade(self.images[self.cursur], self.current_mask[self.cursur])
-            elif self.viz_mode == 'davis':
-                self.viz = overlay_davis(self.images[self.cursur], self.current_mask[self.cursur])
-            elif self.viz_mode == 'light':
-                self.viz = overlay_davis(self.images[self.cursur], self.current_mask[self.cursur], 0.9)
-            else:
-                raise NotImplementedError
-
     def update_interact_vis(self):
         # Update the interactions without re-computing the overlay
         height, width, channel = self.viz.shape
@@ -365,7 +295,8 @@ class App(QWidget):
 
     def show_current_frame(self):
         # Re-compute overlay and show the image
-        self.compose_current_im()
+        self.viz = overlay_davis(self.images[self.cursur], self.current_mask[self.cursur])
+
         self.update_interact_vis()
         self.lcd.setText('{: 3d} / {: 3d}'.format(self.cursur, self.num_frames - 1))
         self.tl_slider.setValue(self.cursur)
@@ -435,16 +366,6 @@ class App(QWidget):
         self.reset_this_interaction()
         self.cursur = self.tl_slider.value()
         self.show_current_frame()
-
-    def brush_slide(self):
-        self.brush_size = self.brush_slider.value()
-        self.brush_label.setText('Brush size: %d' % self.brush_size)
-        try:
-            if type(self.interaction) == FreeInteraction:
-                self.interaction.set_size(self.brush_size)
-        except AttributeError:
-            # Initialization, forget about it
-            pass
 
     def progress_step_cb(self):
         self.progress_num += 1
@@ -559,24 +480,6 @@ class App(QWidget):
         self.current_mask[self.cursur].fill(0)
         self.reset_this_interaction()
         self.show_current_frame()
-
-    def on_zoom_plus(self):
-        self.zoom_pixels -= 25
-        self.zoom_pixels = max(50, self.zoom_pixels)
-        self.update_minimap()
-
-    def on_zoom_minus(self):
-        self.zoom_pixels += 25
-        self.zoom_pixels = min(self.zoom_pixels, 300)
-        self.update_minimap()
-
-    def set_navi_enable(self, boolean):
-        self.zoom_p_button.setEnabled(boolean)
-        self.zoom_m_button.setEnabled(boolean)
-        self.run_button.setEnabled(boolean)
-        self.tl_slider.setEnabled(boolean)
-        self.play_button.setEnabled(boolean)
-        self.lcd.setEnabled(boolean)
 
     def on_finish_local(self):
         self.complete_interaction()
