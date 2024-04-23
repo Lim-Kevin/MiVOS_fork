@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from model.s2m.utils import _SimpleSegmentationModel
+from .utils import _SimpleSegmentationModel
 
 
 __all__ = ["DeepLabV3"]

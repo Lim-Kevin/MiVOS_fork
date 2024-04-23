@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 import torch
 from torchvision import models
-from dataset.range_transform import im_normalization
+from ..dataset.range_transform import im_normalization
 
 
 def images_to_torch(frames, device):

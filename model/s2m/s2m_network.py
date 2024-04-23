@@ -1,8 +1,8 @@
 # Credit: https://github.com/VainF/DeepLabV3Plus-Pytorch
 
-from model.s2m.utils import IntermediateLayerGetter
-from model.s2m._deeplab import DeepLabHead, DeepLabHeadV3Plus, DeepLabV3
-from model.s2m import s2m_resnet
+from .utils import IntermediateLayerGetter
+from ._deeplab import DeepLabHead, DeepLabHeadV3Plus, DeepLabV3
+from . import s2m_resnet
 
 def _segm_resnet(name, backbone_name, num_classes, output_stride, pretrained_backbone):
 

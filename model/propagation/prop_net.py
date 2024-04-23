@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from model.propagation.modules import *
+from .modules import *
 
 
 class Decoder(nn.Module):
