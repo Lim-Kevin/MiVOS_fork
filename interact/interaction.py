@@ -11,6 +11,9 @@ import torch
 import numpy as np
 import cv2
 import time
+
+from PIL import Image
+
 from ..model.aggregate import aggregate_sbg, aggregate_wbg
 from ..util.tensor_util import pad_divide_by, unpad
 from collections import deque

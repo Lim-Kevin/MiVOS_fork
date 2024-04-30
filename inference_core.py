@@ -156,8 +156,10 @@ class InferenceCore:
         else:
             this_range = range(idx-1, closest_ti, -1)
             end = closest_ti + 1
-
+        x = 0
         for ti in this_range:
+            print(x)
+            x += 1
             this_k = keys[:,:,:m_front]
             this_v = values[:,:,:m_front]
             k16, qv16, qf16, qf8, qf4 = self.get_key_feat_buffered(ti)
@@ -243,7 +245,7 @@ class InferenceCore:
 
         self.do_pass(key_k, key_v, idx, True, step_cb=step_cb)
         self.do_pass(key_k, key_v, idx, False, step_cb=step_cb)
-        
+
         # This is a more memory-efficient argmax
         for ti in range(self.t):
             self.masks[ti] = torch.argmax(self.prob[:,ti], dim=0)
@@ -256,7 +258,7 @@ class InferenceCore:
             out_masks = out_masks[:,:,:,self.pad[0]:-self.pad[1]]
 
         self.np_masks = (out_masks.detach().cpu().numpy()[:,0]).astype(np.uint8)
-
+        print('interact done')
         return self.np_masks
 
     def update_mask_only(self, prob_mask, idx):
