@@ -4,14 +4,14 @@ Handles propagation and fusion
 See eval_semi_davis.py / eval_interactive_davis.py for examples
 """
 
-import torch
 import numpy as np
+import torch
 
-from .model.propagation.prop_net import PropagationNetwork
-from .model.fusion_net import FusionNet
 from .model.aggregate import aggregate_wbg
-
+from .model.fusion_net import FusionNet
+from .model.propagation.prop_net import PropagationNetwork
 from .util.tensor_util import pad_divide_by
+
 
 class InferenceCore:
     """
@@ -156,10 +156,9 @@ class InferenceCore:
         else:
             this_range = range(idx-1, closest_ti, -1)
             end = closest_ti + 1
-        x = 0
+
         for ti in this_range:
-            print(x)
-            x += 1
+
             this_k = keys[:,:,:m_front]
             this_v = values[:,:,:m_front]
             k16, qv16, qf16, qf8, qf4 = self.get_key_feat_buffered(ti)
@@ -178,7 +177,7 @@ class InferenceCore:
             # In-place fusion, maximizes the use of queried buffer
             # esp. for long sequence where the buffer will be flushed
             if (closest_ti != self.t) and (closest_ti != -1):
-                self.prob[:,ti] = self.fuse_one_frame(closest_ti, idx, ti, self.prob[:,ti], out_mask, 
+                self.prob[:,ti] = self.fuse_one_frame(closest_ti, idx, ti, self.prob[:,ti], out_mask,
                                         key_k, k16).to(self.result_dev)
             else:
                 self.prob[:,ti] = out_mask.to(self.result_dev)
@@ -258,7 +257,6 @@ class InferenceCore:
             out_masks = out_masks[:,:,:,self.pad[0]:-self.pad[1]]
 
         self.np_masks = (out_masks.detach().cpu().numpy()[:,0]).astype(np.uint8)
-        print('interact done')
         return self.np_masks
 
     def update_mask_only(self, prob_mask, idx):
