@@ -23,9 +23,10 @@ parser = ArgumentParser()
 parser.add_argument('--prop_model', default='saves/stcn.pth')
 parser.add_argument('--fusion_model', default='saves/fusion_stcn.pth')
 parser.add_argument('--s2m_model', default='saves/s2m.pth')
-parser.add_argument('--davis', default='../DAVIS/2017')
+parser.add_argument('--davis', default='dataset/DAVIS_modified')
 parser.add_argument('--output')
 parser.add_argument('--save_mask', action='store_true')
+parser.add_argument('--one_object', action='store_true')
 
 args = parser.parse_args()
 
@@ -35,13 +36,13 @@ save_mask = args.save_mask
 
 # Simple setup
 os.makedirs(out_path, exist_ok=True)
-palette = Image.open(path.expanduser(davis_path + '/trainval/Annotations/480p/blackswan/00000.png')).getpalette()
+palette = Image.open(path.expanduser(davis_path + '/Annotations/480p/blackswan/00000.png')).getpalette()
 
 torch.autograd.set_grad_enabled(False)
 
 # Setup Dataset
-test_dataset = DAVISTestDataset(davis_path+'/trainval', imset='2017/val.txt')
-test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=2)
+test_dataset = DAVISTestDataset(davis_path, imset='2017/val.txt')
+test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=0)
 
 images = {}
 num_objects = {}
@@ -51,7 +52,10 @@ for data in test_loader:
     k = len(data['info']['labels'][0])
     name = data['info']['name'][0]
     images[name] = rgb
-    num_objects[name] = k
+    if args.one_object:
+        num_objects[name] = 1
+    else:
+        num_objects[name] = k
 print('Finished loading %d sequences.' % len(images))
 
 # Load our checkpoint
@@ -71,7 +75,7 @@ total_iter = 0
 user_iter = 0
 last_seq = None
 pred_masks = None
-with DavisInteractiveSession(davis_root=davis_path+'/trainval', report_save_dir='../output', max_nb_interactions=8, max_time=8*30) as sess:
+with DavisInteractiveSession(davis_root=davis_path, report_save_dir=out_path, max_nb_interactions=8, max_time=8*30) as sess:
     while sess.next():
         sequence, scribbles, new_seq = sess.get_scribbles(only_last=True)
 
@@ -103,6 +107,15 @@ with DavisInteractiveSession(davis_root=davis_path+'/trainval', report_save_dir=
         sess.submit_masks(pred_masks, next_masks)
 
         total_iter += 1
+
+    # Saving the very last batch of generated masks
+    if pred_masks is not None:
+        seq_path = path.join(out_path, str(user_iter), last_seq)
+        os.makedirs(seq_path, exist_ok=True)
+        for i in range(len(pred_masks)):
+            img_E = Image.fromarray(pred_masks[i])
+            img_E.putpalette(palette)
+            img_E.save(os.path.join(seq_path, '{:05d}.png'.format(i)))
 
     report = sess.get_report()
     summary = sess.get_global_summary(save_file=path.join(out_path, 'summary.json'))

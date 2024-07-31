@@ -7,10 +7,10 @@ See eval_semi_davis.py / eval_interactive_davis.py for examples
 import numpy as np
 import torch
 
-from .model.aggregate import aggregate_wbg
-from .model.fusion_net import FusionNet
-from .model.propagation.prop_net import PropagationNetwork
-from .util.tensor_util import pad_divide_by
+from lib.MiVOS_STCN.model.aggregate import aggregate_wbg
+from lib.MiVOS_STCN.model.fusion_net import FusionNet
+from lib.MiVOS_STCN.model.propagation.prop_net import PropagationNetwork
+from lib.MiVOS_STCN.util.tensor_util import pad_divide_by
 
 
 class InferenceCore:
