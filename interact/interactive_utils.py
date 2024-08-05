@@ -1,17 +1,12 @@
-# Modifed from https://github.com/seoungwugoh/ivs-demo
-
-import numpy as np
-import os
-import copy
-import cv2
 import glob
+import os
 
-import matplotlib.pyplot as plt
-from scipy.ndimage.morphology import binary_erosion, binary_dilation
-from PIL import Image, ImageDraw, ImageFont
-
+import cv2
+import numpy as np
 import torch
-from torchvision import models
+from PIL import Image
+from scipy.ndimage.morphology import binary_dilation
+
 from ..dataset.range_transform import im_normalization
 
 
